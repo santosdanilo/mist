@@ -2,15 +2,26 @@ import { BrowserModule } from '@angular/platform-browser';
 import { NgModule } from '@angular/core';
 
 import { AppComponent } from './app.component';
+import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
+import { CloudComponent } from './cloud/cloud.component';
+import { InsertionDirective } from './dynamic/insertion.directive';
+import { RenderComponent } from './dynamic/render/render.component';
+import { RainyComponent } from './rainy/rainy.component';
 
 @NgModule({
   declarations: [
-    AppComponent
+    AppComponent,
+    CloudComponent,
+    InsertionDirective,
+    RenderComponent,
+    RainyComponent
   ],
   imports: [
-    BrowserModule
+    BrowserModule,
+    BrowserAnimationsModule
   ],
   providers: [],
-  bootstrap: [AppComponent]
+  bootstrap: [AppComponent],
+  entryComponents: [CloudComponent,RainyComponent]
 })
 export class AppModule { }
