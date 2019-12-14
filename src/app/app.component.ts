@@ -2,6 +2,7 @@ import { Component, OnInit, Type } from '@angular/core';
 import { CloudComponent } from './cloud/cloud.component';
 import { RainyComponent } from './rainy/rainy.component';
 import { MetaInfo } from './dynamic/metainfo.model';
+import { PlotComponent } from 'angular-plotly.js';
 
 @Component({
   selector: 'app-root',
@@ -11,8 +12,21 @@ import { MetaInfo } from './dynamic/metainfo.model';
 export class AppComponent implements OnInit {
   title = 'mist';
   metaInfo: MetaInfo[] = [
-    { component: CloudComponent, inputs: { text: 'poison' } },
-    { component: RainyComponent, inputs: { text: 'fire' } }
+    {
+      component: CloudComponent,
+      inputs: {
+        value: {
+          text: 'poison'
+        }
+      }
+    },
+    {
+      component: RainyComponent, inputs: {
+        value: {
+          text: 'fire'
+        }
+      }
+    }
   ]
   ngOnInit(): void {
 
@@ -20,8 +34,40 @@ export class AppComponent implements OnInit {
 
   changeOrder() {
     this.metaInfo = [
-      { component: RainyComponent, inputs: { text: 'fire' } },
-      { component: CloudComponent, inputs: { text: 'poison' } }
+      {
+        component: RainyComponent, inputs: {
+          value: {
+            text: 'fire'
+          }
+        }
+      },
+      {
+        component: PlotComponent,
+        inputs: {
+          force: true,
+          value: {
+            data: [
+              { x: [1, 2, 3], y: [2, 6, 3], type: 'scatter', mode: 'lines+points', marker: { color: 'red' } },
+              { x: [1, 2, 3], y: [2, 5, 3], type: 'bar' },
+            ],
+            layout: { title: 'A Fancy Plot' }
+          }
+        },
+        outputs: {
+          value: {
+            hover: {
+              success: () => console.log('Hello')
+            }
+          }
+        }
+      },
+      {
+        component: CloudComponent, inputs: {
+          value: {
+            text: 'poison'
+          }
+        }
+      }
     ]
   }
 }

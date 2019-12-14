@@ -1,21 +1,46 @@
-import { Component, OnInit, ViewChildren, AfterViewInit, OnDestroy, ComponentFactoryResolver, Type, ComponentRef, ChangeDetectorRef, ViewContainerRef, Input, OnChanges, SimpleChanges, ChangeDetectionStrategy } from '@angular/core';
+import {
+  Component,
+  OnInit,
+  ViewChildren,
+  AfterViewInit,
+  OnDestroy,
+  ComponentFactoryResolver,
+  Type,
+  ComponentRef,
+  ChangeDetectorRef,
+  ViewContainerRef,
+  Input,
+  OnChanges,
+  SimpleChanges,
+  ChangeDetectionStrategy,
+  EventEmitter
+} from '@angular/core';
 import { InsertionDirective } from '../insertion.directive';
-import { MetaInfo } from '../metainfo.model';
+import { MetaInfo, MetaInfoInterface, MetaInfoOutput } from '../metainfo.model';
+import { Subscription } from 'rxjs';
 
 @Component({
   selector: 'app-render',
-  templateUrl: './render.component.html',
+  template: `
+    <ng-container *ngFor="let comp of metainfo">
+      <ng-template appInsertion></ng-template><br>
+    </ng-container>
+  `,
   styleUrls: ['./render.component.scss'],
   changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class RenderComponent implements OnInit, OnChanges, AfterViewInit, OnDestroy {
   @ViewChildren(InsertionDirective) children: InsertionDirective[];
-  public componentsRef: ComponentRef<any>[];
+
   @Input() metainfo: MetaInfo[];
+
+  public componentsRef: ComponentRef<any>[];
+  public componentsSubscriptions: Subscription[];
 
   constructor(private cfr: ComponentFactoryResolver, private cd: ChangeDetectorRef) { }
 
   ngOnInit(): void {
+    this.componentsSubscriptions = []
   }
 
   ngOnChanges(changes: SimpleChanges): void {
@@ -35,6 +60,9 @@ export class RenderComponent implements OnInit, OnChanges, AfterViewInit, OnDest
   }
 
   removeChildrenComponent(): void {
+    if (this.componentsSubscriptions.length) {
+      this.componentsSubscriptions.forEach(s => s.unsubscribe())
+    }
     if (this.componentsRef.length) {
       this.componentsRef.forEach(c => c.destroy())
     }
@@ -46,6 +74,7 @@ export class RenderComponent implements OnInit, OnChanges, AfterViewInit, OnDest
     return this.metainfo.map((info, index) => {
       let component = this.createChildComponent(info.component, viewContainerRef[index])
       component = this.setChildComponentInput(component, info.inputs)
+      component = this.setChildComponentOutput(component, info.outputs)
       return component
     });
   }
@@ -56,12 +85,30 @@ export class RenderComponent implements OnInit, OnChanges, AfterViewInit, OnDest
     return component
   }
 
-  setChildComponentInput<T>(component: ComponentRef<T>, inputs: any) {
-    Object.keys(inputs).forEach(key => {
-      if (key in component.instance) {
-        component.instance[key] = inputs[key]
-      }
-    })
+  setChildComponentInput<T>(component: ComponentRef<T>, input: MetaInfoInterface) {
+    if (!!input) {
+      Object.keys(input.value).forEach(key => {
+        if (key in component.instance || !!input.force) {
+          component.instance[key] = input.value[key]
+        }
+      })
+    }
+    return component
+  }
+
+  setChildComponentOutput<T>(component: ComponentRef<T>, output: MetaInfoOutput) {
+    if (!!output) {
+      Object.keys(output.value).forEach(key => {
+        if (key in component.instance || !!output.force) {
+          this.componentsSubscriptions.push(
+            (component.instance[key] as EventEmitter<any>).subscribe(
+              output.value[key].success,
+              output.value[key].fail,
+              output.value[key].complete)
+          )
+        }
+      })
+    }
     return component
   }
 
