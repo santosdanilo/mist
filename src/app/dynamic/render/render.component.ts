@@ -1,17 +1,16 @@
-import { Component, OnInit, ViewChildren, AfterViewInit, OnDestroy, ComponentFactoryResolver, Type, ComponentRef, ChangeDetectorRef, ViewContainerRef, Input } from '@angular/core';
+import { Component, OnInit, ViewChildren, AfterViewInit, OnDestroy, ComponentFactoryResolver, Type, ComponentRef, ChangeDetectorRef, ViewContainerRef, Input, OnChanges, SimpleChanges, ChangeDetectionStrategy } from '@angular/core';
 import { InsertionDirective } from '../insertion.directive';
-import { CloudComponent } from 'src/app/cloud/cloud.component';
-import { RainyComponent } from 'src/app/rainy/rainy.component';
 import { MetaInfo } from '../metainfo.model';
 
 @Component({
   selector: 'app-render',
   templateUrl: './render.component.html',
-  styleUrls: ['./render.component.scss']
+  styleUrls: ['./render.component.scss'],
+  changeDetection: ChangeDetectionStrategy.OnPush
 })
-export class RenderComponent implements OnInit, AfterViewInit, OnDestroy {
+export class RenderComponent implements OnInit, OnChanges, AfterViewInit, OnDestroy {
   @ViewChildren(InsertionDirective) children: InsertionDirective[];
-  public componentsRef: ComponentRef<any>[] = [null, null]
+  public componentsRef: ComponentRef<any>[];
   @Input() metainfo: MetaInfo[];
 
   constructor(private cfr: ComponentFactoryResolver, private cd: ChangeDetectorRef) { }
@@ -19,21 +18,39 @@ export class RenderComponent implements OnInit, AfterViewInit, OnDestroy {
   ngOnInit(): void {
   }
 
+  ngOnChanges(changes: SimpleChanges): void {
+    if (changes['metainfo'] && !changes['metainfo'].firstChange) {
+      this.removeChildrenComponent()
+      this.loadChildrenComponent()
+    }
+  }
+
   ngAfterViewInit(): void {
     this.loadChildrenComponent()
-    this.cd.detectChanges()
   }
 
   loadChildrenComponent(): void {
+    this.componentsRef = this.createChildrenComponent()
+    this.cd.detectChanges()
+  }
+
+  removeChildrenComponent(): void {
+    if (this.componentsRef.length) {
+      this.componentsRef.forEach(c => c.destroy())
+    }
+    this.cd.detectChanges()
+  }
+
+  createChildrenComponent<T>(): ComponentRef<T>[] {
     const viewContainerRef = this.children.map(c => c.viewContainerRef)
-    this.metainfo.forEach((info, index) => {
-      let component = this.loadChildComponent(info.component, viewContainerRef[index])
+    return this.metainfo.map((info, index) => {
+      let component = this.createChildComponent(info.component, viewContainerRef[index])
       component = this.setChildComponentInput(component, info.inputs)
-      this.componentsRef[index] = component
+      return component
     });
   }
 
-  loadChildComponent<T>(componentType: Type<T>, viewContainerRef: ViewContainerRef) {
+  createChildComponent<T>(componentType: Type<T>, viewContainerRef: ViewContainerRef) {
     const componentFactory = this.cfr.resolveComponentFactory<T>(componentType)
     const component = viewContainerRef.createComponent<T>(componentFactory)
     return component
@@ -49,9 +66,7 @@ export class RenderComponent implements OnInit, AfterViewInit, OnDestroy {
   }
 
   ngOnDestroy(): void {
-    if (this.componentsRef.length) {
-      this.componentsRef.forEach(c => c.destroy())
-    }
+    this.removeChildrenComponent()
   }
 
 }
