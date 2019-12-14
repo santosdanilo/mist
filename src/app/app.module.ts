@@ -8,6 +8,7 @@ import { CloudComponent } from './cloud/cloud.component';
 import { InsertionDirective } from './dynamic/insertion.directive';
 import { RenderComponent } from './dynamic/render/render.component';
 import { RainyComponent } from './rainy/rainy.component';
+import { AlterDirective } from './dynamic/alter.directive';
 
 @NgModule({
   declarations: [
@@ -15,7 +16,8 @@ import { RainyComponent } from './rainy/rainy.component';
     CloudComponent,
     InsertionDirective,
     RenderComponent,
-    RainyComponent
+    RainyComponent,
+    AlterDirective
   ],
   imports: [
     BrowserModule,

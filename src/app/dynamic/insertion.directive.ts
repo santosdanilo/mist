@@ -5,6 +5,7 @@ import { Directive, ViewContainerRef } from '@angular/core';
 })
 export class InsertionDirective {
 
-  constructor(public viewContainerRef: ViewContainerRef) { }
+  constructor(public vcr: ViewContainerRef) {
+  }
 
 }

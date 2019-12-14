@@ -13,17 +13,19 @@ import {
   OnChanges,
   SimpleChanges,
   ChangeDetectionStrategy,
-  EventEmitter
+  EventEmitter,
+  Renderer2
 } from '@angular/core';
 import { InsertionDirective } from '../insertion.directive';
 import { MetaInfo, MetaInfoInterface, MetaInfoOutput } from '../metainfo.model';
 import { Subscription } from 'rxjs';
+import { AlterDirective } from '../alter.directive';
 
 @Component({
   selector: 'app-render',
   template: `
     <ng-container *ngFor="let comp of metainfo">
-      <ng-template appInsertion></ng-template><br>
+      <ng-template appInsertion appAlter></ng-template>
     </ng-container>
   `,
   styleUrls: ['./render.component.scss'],
@@ -37,7 +39,7 @@ export class RenderComponent implements OnInit, OnChanges, AfterViewInit, OnDest
   public componentsRef: ComponentRef<any>[];
   public componentsSubscriptions: Subscription[];
 
-  constructor(private cfr: ComponentFactoryResolver, private cd: ChangeDetectorRef) { }
+  constructor(private cfr: ComponentFactoryResolver, private cd: ChangeDetectorRef, private renderer: Renderer2) { }
 
   ngOnInit(): void {
     this.componentsSubscriptions = []
@@ -70,7 +72,7 @@ export class RenderComponent implements OnInit, OnChanges, AfterViewInit, OnDest
   }
 
   createChildrenComponent<T>(): ComponentRef<T>[] {
-    const viewContainerRef = this.children.map(c => c.viewContainerRef)
+    const viewContainerRef = this.children.map(c => c.vcr)
     return this.metainfo.map((info, index) => {
       let component = this.createChildComponent(info.component, viewContainerRef[index])
       component = this.setChildComponentInput(component, info.inputs)
@@ -82,6 +84,10 @@ export class RenderComponent implements OnInit, OnChanges, AfterViewInit, OnDest
   createChildComponent<T>(componentType: Type<T>, viewContainerRef: ViewContainerRef) {
     const componentFactory = this.cfr.resolveComponentFactory<T>(componentType)
     const component = viewContainerRef.createComponent<T>(componentFactory)
+    console.log(this.renderer.createElement('div'))
+    //viewContainerRef.createComponent()
+    //const d = new AlterDirective(viewContainerRef)
+    //console.log(d)
     return component
   }
 
