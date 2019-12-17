@@ -14,6 +14,7 @@ export class AppComponent implements OnInit {
   metaInfo: MetaInfo[] = [
     {
       component: CloudComponent,
+      template: `<aside><ng-template appInsertionDyn></ng-template></aside>`,
       inputs: {
         value: {
           text: 'poison'
@@ -21,7 +22,9 @@ export class AppComponent implements OnInit {
       }
     },
     {
-      component: RainyComponent, inputs: {
+      component: RainyComponent,
+      template: `<aside><ng-template appInsertionDyn></ng-template></aside>`,
+      inputs: {
         value: {
           text: 'fire'
         }

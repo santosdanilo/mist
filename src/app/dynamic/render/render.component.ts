@@ -19,6 +19,7 @@ import {
 import { InsertionDirective } from '../insertion.directive';
 import { MetaInfo, MetaInfoInterface, MetaInfoOutput } from '../metainfo.model';
 import { Subscription } from 'rxjs';
+import { JITProjectionService } from '../services/jit.service';
 
 @Component({
   selector: 'app-render',
@@ -38,7 +39,7 @@ export class RenderComponent implements OnInit, OnChanges, AfterViewInit, OnDest
   public componentsRef: ComponentRef<any>[];
   public componentsSubscriptions: Subscription[];
 
-  constructor(private cfr: ComponentFactoryResolver, private cd: ChangeDetectorRef, private renderer: Renderer2) { }
+  constructor(private cfr: ComponentFactoryResolver, private cd: ChangeDetectorRef, private jit: JITProjectionService) { }
 
   ngOnInit(): void {
     this.componentsSubscriptions = []
@@ -56,8 +57,10 @@ export class RenderComponent implements OnInit, OnChanges, AfterViewInit, OnDest
   }
 
   loadChildrenComponent(): void {
-    this.componentsRef = this.createChildrenComponent()
-    this.cd.detectChanges()
+    const viewContainerRef = this.children.map(c => c.vcr)
+    this.jit.loadComponents(this.metainfo, viewContainerRef).then(c => {
+      this.cd.detectChanges()
+    })
   }
 
   removeChildrenComponent(): void {

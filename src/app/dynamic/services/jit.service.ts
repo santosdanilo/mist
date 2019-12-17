@@ -1,30 +1,63 @@
-import { Injectable, Compiler, Injector, NgModuleRef, NgModule, ViewContainerRef, ModuleWithComponentFactories } from '@angular/core';
+import { Injectable, Compiler, Injector, NgModuleRef, NgModule, ViewContainerRef, ModuleWithComponentFactories, Component, ViewChild, ComponentFactoryResolver, ComponentRef } from '@angular/core';
 import { MetaInfo } from '../metainfo.model';
+import { InsertionDynDirective } from '../insertion-dyn.directive';
+import { DynComponent } from './dyn.model';
 
 @Injectable({
   providedIn: 'root'
 })
-export class JitService {
-  constructor(private compiler: Compiler, private injector: Injector, private module: NgModuleRef<any>) { }
+export class JITProjectionService {
+  componentRef: ComponentRef<any>[] = []
+
+  constructor(
+    private compiler: Compiler,
+    private injector: Injector,
+    private module: NgModuleRef<any>,
+    private cfr: ComponentFactoryResolver) { }
 
   compileComponent(tmpModule: any): Promise<ModuleWithComponentFactories<any>> {
     return this.compiler.compileModuleAndAllComponentsAsync(tmpModule)
   }
 
-  createTempModule(components: MetaInfo[]) {
-    const d = Array.from(new Set(components.map(c => c.component)))
-    return NgModule({ declarations: d })(class { })
+  createTempModule(components: any) {
+    const d = components
+    return NgModule({ declarations: [...d, InsertionDynDirective] })(
+      class { }
+    )
   }
 
-  async loadComponents(components: MetaInfo[]) {
-    const vcrs: ViewContainerRef[] = []
-    const m = this.createTempModule(components)
+  createComponent(template: string, name: string = undefined) {
+    return Component({ template: `${template}`, selector: name })(class extends DynComponent { })
+  }
+
+  async loadComponents(metainfo: MetaInfo[], vcrs: ViewContainerRef[]): Promise<ComponentRef<any>[]> {
+    const c = metainfo.map((c, index) => this.createComponent((c.template ? c.template : '<div></div>'), `dyn-${index}`))
+    const m = this.createTempModule(c)
     try {
       const factories = await this.compileComponent(m)
-      console.log(factories)
-
+      const wrapperRef = metainfo.map((m, index) => {
+        const vcr = vcrs[index]
+        const factory = factories.componentFactories[index]
+        return vcr.createComponent<any>(factory)
+      })
+      const componentRef = metainfo.map((m, index) => {
+        const vcr = wrapperRef[index].instance.child.vcr
+        const factory = this.cfr.resolveComponentFactory(m.component)
+        return vcr.createComponent(factory)
+      })
+      this.componentRef = [...wrapperRef, ...componentRef]
+      return this.componentRef
     } catch (error) {
+      console.log(error)
+    }
+  }
 
+  destroyComponent() {
+    // if (this.componentsSubscriptions.length) {
+    //   this.componentsSubscriptions.forEach(s => s.unsubscribe())
+    // }
+    if (this.componentRef && this.componentRef.length > 0) {
+      this.componentRef.forEach(c => c.destroy())
     }
   }
 }
