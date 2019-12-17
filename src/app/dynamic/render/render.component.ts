@@ -19,13 +19,12 @@ import {
 import { InsertionDirective } from '../insertion.directive';
 import { MetaInfo, MetaInfoInterface, MetaInfoOutput } from '../metainfo.model';
 import { Subscription } from 'rxjs';
-import { AlterDirective } from '../alter.directive';
 
 @Component({
   selector: 'app-render',
   template: `
     <ng-container *ngFor="let comp of metainfo">
-      <ng-template appInsertion appAlter></ng-template>
+      <ng-template appInsertion></ng-template>
     </ng-container>
   `,
   styleUrls: ['./render.component.scss'],
@@ -84,7 +83,6 @@ export class RenderComponent implements OnInit, OnChanges, AfterViewInit, OnDest
   createChildComponent<T>(componentType: Type<T>, viewContainerRef: ViewContainerRef) {
     const componentFactory = this.cfr.resolveComponentFactory<T>(componentType)
     const component = viewContainerRef.createComponent<T>(componentFactory)
-    console.log(this.renderer.createElement('div'))
     //viewContainerRef.createComponent()
     //const d = new AlterDirective(viewContainerRef)
     //console.log(d)
