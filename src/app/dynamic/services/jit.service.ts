@@ -1,3 +1,7 @@
+/*
+Heavely based on 
+https://indepth.dev/here-is-what-you-need-to-know-about-dynamic-components-in-angular/#b1ae
+*/
 import { Injectable, Compiler, Injector, NgModuleRef, NgModule, ViewContainerRef, ModuleWithComponentFactories, Component, ViewChild, ComponentFactoryResolver, ComponentRef } from '@angular/core';
 import { MetaInfo } from '../metainfo.model';
 import { InsertionDynDirective } from '../insertion-dyn.directive';
