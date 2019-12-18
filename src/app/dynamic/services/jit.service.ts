@@ -3,14 +3,15 @@ Heavely based on
 https://indepth.dev/here-is-what-you-need-to-know-about-dynamic-components-in-angular/#b1ae
 */
 import { Injectable, Compiler, Injector, NgModuleRef, NgModule, ViewContainerRef, ModuleWithComponentFactories, Component, ViewChild, ComponentFactoryResolver, ComponentRef } from '@angular/core';
-import { MetaInfo } from '../metainfo.model';
+import { MetaInfo, MetaInfoOutput, MetaInfoInterface } from '../metainfo.model';
 import { InsertionDynDirective } from '../insertion-dyn.directive';
 import { DynComponent } from './dyn.model';
+import { Projection } from './projection';
 
 @Injectable({
   providedIn: 'root'
 })
-export class JITProjectionService {
+export class JITProjectionService implements Projection {
   componentRef: ComponentRef<any>[] = []
 
   constructor(
@@ -19,11 +20,11 @@ export class JITProjectionService {
     private module: NgModuleRef<any>,
     private cfr: ComponentFactoryResolver) { }
 
-  compileComponent(tmpModule: any): Promise<ModuleWithComponentFactories<any>> {
+  private compileComponent(tmpModule: any): Promise<ModuleWithComponentFactories<any>> {
     return this.compiler.compileModuleAndAllComponentsAsync(tmpModule)
   }
 
-  createTempModule(components: any) {
+  private createTempModule(components: any) {
     const d = components
     return NgModule({ declarations: [...d, InsertionDynDirective] })(
       class { }
@@ -56,7 +57,15 @@ export class JITProjectionService {
     }
   }
 
-  destroyComponent() {
+  private setComponentInput<T>(component: ComponentRef<T>, input: MetaInfoInterface) {
+
+  }
+
+  private setComponentOutput<T>(component: ComponentRef<T>, output: MetaInfoOutput) {
+
+  }
+
+  destroyComponents() {
     // if (this.componentsSubscriptions.length) {
     //   this.componentsSubscriptions.forEach(s => s.unsubscribe())
     // }

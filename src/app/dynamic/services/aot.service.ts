@@ -1,39 +1,57 @@
-import { Injectable, Compiler, Injector, NgModuleRef, NgModule, ViewContainerRef, ModuleWithComponentFactories, Component, ViewChild, ComponentFactoryResolver, ComponentRef } from '@angular/core';
-import { MetaInfo } from '../metainfo.model';
-import { InsertionDynDirective } from '../insertion-dyn.directive';
-import { DynComponent } from './dyn.model';
+import { Injectable, ViewContainerRef, ComponentFactoryResolver, ComponentRef, EventEmitter, Type } from '@angular/core';
+import { MetaInfo, MetaInfoInterface, MetaInfoOutput } from '../metainfo.model';
 import { Subscription } from 'rxjs';
+import { Projection } from './projection';
 
 @Injectable({
   providedIn: 'root'
 })
-export class AOTProjectionService {
+export class AOTProjectionService implements Projection {
   componentRef: ComponentRef<any>[] = []
   componentsSubscriptions: Subscription[] = []
 
-  constructor(
-    private compiler: Compiler,
-    private injector: Injector,
-    private module: NgModuleRef<any>,
-    private cfr: ComponentFactoryResolver) { }
-
-  compileComponent(tmpModule: any): Promise<ModuleWithComponentFactories<any>> {
-    return this.compiler.compileModuleAndAllComponentsAsync(tmpModule)
-  }
-
-  createTempModule(components: any) {
-    const d = components
-    return NgModule({ declarations: [...d, InsertionDynDirective] })(
-      class { }
-    )
-  }
-
-  createComponent(template: string, name: string = undefined) {
-    return Component({ template: `${template}`, selector: name })(class extends DynComponent { })
-  }
+  constructor(private cfr: ComponentFactoryResolver) { }
 
   loadComponents(metainfo: MetaInfo[], vcrs: ViewContainerRef[]) {
+    this.componentRef = metainfo.map((info, index) => {
+      let component = this.createComponent(info.component, vcrs[index])
+      component = this.setComponentInput(component, info.inputs)
+      component = this.setComponentOutput(component, info.outputs)
+      return component
+    });
+  }
 
+  createComponent<T>(componentType: Type<T>, viewContainerRef: ViewContainerRef) {
+    const componentFactory = this.cfr.resolveComponentFactory<T>(componentType)
+    const component = viewContainerRef.createComponent<T>(componentFactory)
+    return component
+  }
+
+  private setComponentInput<T>(component: ComponentRef<T>, input: MetaInfoInterface) {
+    if (!!input) {
+      Object.keys(input.value).forEach(key => {
+        if (key in component.instance || !!input.force) {
+          component.instance[key] = input.value[key]
+        }
+      })
+    }
+    return component
+  }
+
+  private setComponentOutput<T>(component: ComponentRef<T>, output: MetaInfoOutput) {
+    if (!!output) {
+      Object.keys(output.value).forEach(key => {
+        if (key in component.instance || !!output.force) {
+          this.componentsSubscriptions.push(
+            (component.instance[key] as EventEmitter<any>).subscribe(
+              output.value[key].success,
+              output.value[key].fail,
+              output.value[key].complete)
+          )
+        }
+      })
+    }
+    return component
   }
 
   destroyComponents() {
