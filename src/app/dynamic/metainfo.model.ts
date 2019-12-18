@@ -1,7 +1,8 @@
 import { Type } from '@angular/core';
 
 export interface MetaInfo {
-    component: Type<any>
+    component: Type<any>;
+    template?: string;
     inputs?: MetaInfoInterface;
     outputs?: MetaInfoOutput;
 }
